@@ -4,6 +4,12 @@ version = "0.1.0"
 authors = ["Shinichi Kogai <kogai0121@gmail.com>"]
 
 [dependencies]
+bigint = "4.3.0"
+bytes = "0.4.7"
+env_logger = "0.5.10"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
 multibase = "*"
 multihash = "*"
 libp2p-secio = { path = "./rust-libp2p/secio" }
