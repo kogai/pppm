@@ -1,0 +1,18 @@
+[package]
+name = "pppm"
+version = "0.1.0"
+authors = ["Shinichi Kogai <kogai0121@gmail.com>"]
+
+[dependencies]
+multibase = "*"
+multihash = "*"
+libp2p-secio = { path = "./rust-libp2p/secio" }
+libp2p-tcp-transport = { path = "./rust-libp2p/tcp-transport" }
+
+[patch.crates-io]
+# TODO: Update ring and solve conflicts
+"ring" = { git = "https://github.com/briansmith/ring", rev = "3a14ef619559f7d4b69e2286d49c833409eef34a" }
+
+# Using a version of rust-multihash that compiles on emscripten
+# TODO: remove once merged upstream
+"multihash" = { git = "https://github.com/tomaka/rust-multihash", branch = "emscripten-hack" }
