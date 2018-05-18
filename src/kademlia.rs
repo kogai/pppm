@@ -18,17 +18,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-use libp2p_core as swarm;
-use libp2p_identify as identify;
-use libp2p_kad as kad;
-use libp2p_mplex as multiplex;
-use libp2p_peerstore as peerstore;
-use libp2p_secio as secio;
-use libp2p_tcp_transport as tcp;
+use identify;
+use kad;
+use multiplex;
+use peerstore;
+use secio;
+use swarm;
 
 use bigint::U512;
 use futures::future::Future;
-use peerstore::PeerId;
+use multiaddr;
 use std::env;
 use std::sync::Arc;
 use std::time::Duration;
@@ -37,9 +36,42 @@ use swarm::upgrade;
 use tcp::TcpConfig;
 use tokio_core::reactor::Core;
 
-pub fn run() {
-    env_logger::init();
+use multiaddr::Multiaddr;
+use peerstore::{PeerAccess, PeerId, Peerstore};
 
+/// Stores initial addresses on the given peer store. Uses a very large timeout.
+pub fn ipfs_bootstrap<P>(peer_store: P)
+where
+    P: Peerstore + Clone,
+{
+    const ADDRESSES: &[&str] = &[
+        "/ip4/127.0.0.1/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+        // TODO: add some bootstrap nodes here
+    ];
+
+    let ttl = Duration::from_secs(100 * 365 * 24 * 3600);
+
+    for address in ADDRESSES.iter() {
+        let mut multiaddr = address
+            .parse::<Multiaddr>()
+            .expect("failed to parse hard-coded multiaddr");
+
+        let ipfs_component = multiaddr.pop().expect("hard-coded multiaddr is empty");
+        let peer = match ipfs_component {
+            multiaddr::AddrComponent::IPFS(key) => {
+                PeerId::from_bytes(key).expect("invalid peer id")
+            }
+            _ => panic!("hard-coded multiaddr didn't end with /ipfs/"),
+        };
+
+        peer_store
+            .clone()
+            .peer_or_create(&peer)
+            .add_addr(multiaddr, ttl.clone());
+    }
+}
+
+pub fn run() {
     // Determine which addresses to listen to.
     let listen_addrs = {
         let mut args = env::args().skip(1).collect::<Vec<_>>();
@@ -53,7 +85,7 @@ pub fn run() {
     let mut core = Core::new().unwrap();
 
     let peer_store = Arc::new(peerstore::memory_peerstore::MemoryPeerstore::empty());
-    example::ipfs_bootstrap(&*peer_store);
+    ipfs_bootstrap(&*peer_store);
 
     // Now let's build the transport stack.
     // We create a `TcpConfig` that indicates that we want TCP/IP.
