@@ -1,5 +1,18 @@
 extern crate crust;
 
+use crust::Config;
+
+/**
+ * TODO:
+ * add
+ * remove
+ * list
+ * find
+ * vote
+ * init
+ */
+
 fn main() {
-  println!("Hello, world");
+  let config = Config::default();
+  println!("{:#?}", config);
 }
